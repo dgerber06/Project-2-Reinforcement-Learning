@@ -60,11 +60,18 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.runValueIteration()
 
     def runValueIteration(self):
-        """
-          Run the value iteration algorithm. Note that in standard
-          value iteration, V_k+1(...) depends on V_k(...)'s.
-        """
-        "*** YOUR CODE HERE ***"
+        for i in range(self.iterations):
+            nv = util.Counter()
+            for state in self.mdp.getStates():
+                if self.mdp.isTerminal(state):
+                    nv[state] = 0
+                else:
+                    acts = self.mdp.getPossibleActions(state)
+                    qval = []
+                    for action in acts:
+                        qval.append(self.computeQValueFromValues(state, action))
+                    nv[state] = max(qval)
+            self.values = nv
 
     def getValue(self, state):
         """
@@ -73,24 +80,23 @@ class ValueIterationAgent(ValueEstimationAgent):
         return self.values[state]
 
     def computeQValueFromValues(self, state, action):
-        """
-          Compute the Q-value of action in state from the
-          value function stored in self.values.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qval = 0
+        for next, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+            r = self.mdp.getReward(state, action, next)
+            qval += prob * (r + self.discount * self.values[next])
+        return qval
 
     def computeActionFromValues(self, state):
-        """
-          The policy is the best action in the given state
-          according to the values currently stored in self.values.
-
-          You may break ties any way you see fit.  Note that if
-          there are no legal actions, which is the case at the
-          terminal state, you should return None.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return None
+        bestA = None
+        bestV = float("-inf")
+        for action in self.mdp.getPossibleActions(state):
+            q = self.computeQValueFromValues(state, action)
+            if q > bestV:
+                bestV = q
+                bestA = action
+        return bestA
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
