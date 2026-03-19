@@ -70,14 +70,7 @@ class QLearningAgent(ReinforcementAgent):
         if not legal_action: 
             return 0.0 
 
-        max_value = None 
-        for action in legal_action:
-            if max_value == None: 
-                 max_value = self.q_value[(state,action)]
-            elif self.q_value[(state, action)] > max_value:
-                 max_value = self.q_value[(state,action)]
-
-        return max_value
+        return max([self.getQValue(state,action) for action in legal_action])
 
     def computeActionFromQValues(self, state):
         """
@@ -90,14 +83,11 @@ class QLearningAgent(ReinforcementAgent):
         if not legal_action: 
             return None
 
-        max_action, max_value = (None, 0.0) 
-        for action in legal_action: 
-            if max_action == None: 
-                 max_action, max_value = (action, self.q_value[(state,action)])
-            elif self.q_value[(state,action)] > max_value: 
-                 max_action, max_value = (action, self.q_value[(state,action)])
+        max_value = self.computeValueFromQValues(state)
 
-        return max_action
+        best_actions = [a for a in legal_action if self.getQValue(state, a) == max_value]
+
+        return random.choice(best_actions)
 
     def getAction(self, state):
         """
@@ -198,14 +188,22 @@ class ApproximateQAgent(PacmanQAgent):
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        features = self.featExtractor.getFeatures(state, action)
+
+        return features * self.weights
 
     def update(self, state, action, nextState, reward: float):
         """
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        correction = (reward + self.discount * self.getValue(nextState))
+        difference = correction - self.getQValue(state, action)
+
+        features = self.featExtractor.getFeatures(state, action)
+        for feature, value in features.items():
+            self.weights[feature] += self.alpha * difference * value
+        
 
     def final(self, state):
         """Called at the end of each game."""
